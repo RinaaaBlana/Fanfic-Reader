@@ -1,0 +1,101 @@
+import streamlit as st
+import os
+from pathlib import Path
+import base64
+
+st.set_page_config(
+    page_title="📖 FanFic Reader Mobile",
+    page_icon="📚",
+    layout="centered"
+)
+
+# Стили для мобильных
+st.markdown("""
+<style>
+    .fanfic-text {
+        font-family: 'Georgia', serif;
+        font-size: 18px;
+        line-height: 1.8;
+        padding: 10px;
+    }
+    .stButton > button {
+        width: 100%;
+        margin: 5px 0;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+class FanficLibrary:
+    def __init__(self):
+        self.lib_path = Path("./fanfics")
+        self.lib_path.mkdir(exist_ok=True)
+    
+    def save_fanfic(self, title, text):
+        filename = title.replace(" ", "_") + ".txt"
+        (self.lib_path / filename).write_text(text, encoding='utf-8')
+        return filename
+    
+    def get_fanfics(self):
+        return [f.stem.replace("_", " ") for f in self.lib_path.glob("*.txt")]
+    
+    def read_fanfic(self, title):
+        filename = title.replace(" ", "_") + ".txt"
+        return (self.lib_path / filename).read_text(encoding='utf-8')
+
+def main():
+    st.title("📖 Читалка фанфиков")
+    st.markdown("---")
+    
+    library = FanficLibrary()
+    
+    # Вкладки
+    tab1, tab2, tab3 = st.tabs(["📚 Мои фанфики", "➕ Добавить", "📖 Читать"])
+    
+    with tab1:
+        st.header("Ваша библиотека")
+        fanfics = library.get_fanfics()
+        
+        if not fanfics:
+            st.info("Пока нет фанфиков. Добавьте первый во вкладке 'Добавить'!")
+        else:
+            for i, title in enumerate(fanfics):
+                col1, col2 = st.columns([3, 1])
+                with col1:
+                    st.write(f"**{title}**")
+                with col2:
+                    if st.button("Читать", key=f"read_{i}"):
+                        st.session_state['reading'] = title
+                        st.rerun()
+    
+    with tab2:
+        st.header("Добавить новый фанфик")
+        
+        title = st.text_input("Название:")
+        content = st.text_area("Текст фанфика:", height=300)
+        
+        if st.button("💾 Сохранить", type="primary"):
+            if title and content:
+                library.save_fanfic(title, content)
+                st.success(f"✅ '{title}' сохранен!")
+                st.balloons()
+    
+    with tab3:
+        if 'reading' in st.session_state:
+            st.header(f"📖 {st.session_state['reading']}")
+            
+            content = library.read_fanfic(st.session_state['reading'])
+            
+            # Прокрутка с закладкой
+            lines = content.split('\n')
+            for i, line in enumerate(lines):
+                if line.strip():
+                    st.markdown(f'<div class="fanfic-text">{line}</div>', unsafe_allow_html=True)
+            
+            if st.button("← Назад"):
+                del st.session_state['reading']
+                st.rerun()
+        else:
+            st.info("Выберите фанфик для чтения во вкладке 'Мои фанфики'")
+
+if __name__ == "__main__":
+    main()
