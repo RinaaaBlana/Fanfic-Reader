@@ -8,4 +8,4 @@
 3. Все данные сохраняются автоматически
 
 ## Доступ онлайн:
-[Открыть приложение](https://your-app-name.streamlit.app)
+[Открыть приложение](https://funfic-reader.streamlit.app)
